@@ -211,7 +211,7 @@
     </p>
 
     <div class="install-block" onclick="copyInstall()">
-      <code>curl -fsSL https://plum.dev/install | bash</code>
+      <code>npm install -g @rjcuff/plum</code>
       <button class="copy-btn" id="copyBtn">Copy</button>
     </div>
 
@@ -276,7 +276,7 @@
 
   <script>
     function copyInstall() {
-      const cmd = 'curl -fsSL https://plum.dev/install | bash';
+      const cmd = 'npm install -g @rjcuff/plum';
       navigator.clipboard.writeText(cmd).then(() => {
         const btn = document.getElementById('copyBtn');
         btn.textContent = 'Copied!';

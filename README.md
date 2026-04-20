@@ -16,11 +16,17 @@ Scanned in 0.54s
 
 ## Install
 
+**via npm** (recommended — works everywhere Node is installed):
 ```bash
-curl -fsSL https://plum.dev/install | bash
+npm install -g @rjcuff/plum
 ```
 
-Or download a binary from [Releases](https://github.com/rjcuff/plum/releases).
+**via curl** (macOS / Linux):
+```bash
+curl -fsSL https://raw.githubusercontent.com/rjcuff/plum/main/install.sh | bash
+```
+
+Or download a binary directly from [Releases](https://github.com/rjcuff/plum/releases).
 
 ## Usage
 
