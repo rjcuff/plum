@@ -10,6 +10,7 @@ env:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build:
@@ -77,6 +78,9 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Copy README into npm package
+        run: cp README.md npm/README.md
+
       - name: Sync version from git tag
         run: |
           TAG="${GITHUB_REF_NAME#v}"
@@ -84,7 +88,7 @@ jobs:
         working-directory: npm
 
       - name: Publish
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         working-directory: npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
