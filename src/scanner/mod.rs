@@ -24,16 +24,24 @@ pub async fn scan(package: &str, config: &Config) -> Result<ScanOutput> {
 
     let typosquat_result = typosquat::check(pkg_name);
 
-    // Run OSV, npm metadata, and GitHub Advisory all in parallel
-    let (vulns_res, npm_res, advisory_res) = tokio::join!(
-        osv::fetch_vulnerabilities(&client, package),
+    // Fetch npm metadata first to get the resolved version
+    let (npm_res, advisory_res) = tokio::join!(
         npm::fetch_metadata(&client, package),
         advisory::fetch_advisories(&client, package),
     );
 
-    let vulns = vulns_res.unwrap_or_default();
     let npm_meta = npm_res?;
     let _advisories = advisory_res.unwrap_or_default();
+
+    // Now query OSV with the resolved version so we only get CVEs affecting this version
+    let resolved = if npm_meta.resolved_version.is_empty() {
+        None
+    } else {
+        Some(npm_meta.resolved_version.as_str())
+    };
+    let vulns = osv::fetch_vulnerabilities(&client, package, resolved)
+        .await
+        .unwrap_or_default();
 
     // Tarball fetch starts immediately after we have the URL (as early as possible)
     let js_files = if !npm_meta.tarball_url.is_empty() {

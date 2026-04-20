@@ -21,6 +21,8 @@ pub enum VulnSeverity {
 #[derive(Serialize)]
 struct OsvQuery {
     package: OsvPackage,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -60,13 +62,21 @@ struct OsvDatabaseSpecific {
     severity: Option<String>,
 }
 
-pub async fn fetch_vulnerabilities(client: &Client, package: &str) -> Result<Vec<Vulnerability>> {
+/// Fetch vulnerabilities, optionally filtered to a specific version.
+/// `version` comes from the resolved npm metadata (latest or pinned).
+pub async fn fetch_vulnerabilities(
+    client: &Client,
+    package: &str,
+    resolved_version: Option<&str>,
+) -> Result<Vec<Vulnerability>> {
     let name = strip_version(package);
+
     let body = OsvQuery {
         package: OsvPackage {
             name: name.to_string(),
             ecosystem: "npm".to_string(),
         },
+        version: resolved_version.map(|v| v.to_string()),
     };
 
     let resp: OsvResponse = client
@@ -92,7 +102,6 @@ pub async fn fetch_vulnerabilities(client: &Client, package: &str) -> Result<Vec
 }
 
 fn parse_severity(vuln: &OsvVuln) -> VulnSeverity {
-    // Try CVSS score first
     for s in &vuln.severity {
         if s.score_type == "CVSS_V3" || s.score_type == "CVSS_V2" {
             if let Some(score) = extract_cvss_score(&s.score) {
@@ -101,7 +110,6 @@ fn parse_severity(vuln: &OsvVuln) -> VulnSeverity {
         }
     }
 
-    // Fall back to database_specific severity string
     if let Some(ref db) = vuln.database_specific {
         if let Some(ref sev) = db.severity {
             return match sev.to_uppercase().as_str() {
@@ -118,7 +126,6 @@ fn parse_severity(vuln: &OsvVuln) -> VulnSeverity {
 }
 
 fn extract_cvss_score(vector: &str) -> Option<f64> {
-    // CVSS vectors look like "CVSS:3.1/AV:N/AC:L/..." but some entries are just a number
     if let Ok(score) = vector.parse::<f64>() {
         return Some(score);
     }

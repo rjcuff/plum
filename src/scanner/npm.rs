@@ -8,6 +8,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct NpmMeta {
     pub tarball_url: String,
+    pub resolved_version: String,
     pub published_recently: bool,
     pub maintainer_new: bool,
     pub has_readme: bool,
@@ -21,6 +22,7 @@ impl Default for NpmMeta {
     fn default() -> Self {
         Self {
             tarball_url: String::new(),
+            resolved_version: String::new(),
             published_recently: false,
             maintainer_new: false,
             has_readme: true,
@@ -129,6 +131,7 @@ pub async fn fetch_metadata(client: &Client, package: &str) -> Result<NpmMeta> {
 
     Ok(NpmMeta {
         tarball_url,
+        resolved_version: version,
         published_recently,
         maintainer_new,
         has_readme,

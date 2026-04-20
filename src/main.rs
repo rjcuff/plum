@@ -65,6 +65,11 @@ async fn run_scan(package: &str, config: &Config, do_install: bool, force_yes: b
         return Ok(());
     }
 
+    // Show resolved version
+    if !output.npm_meta.resolved_version.is_empty() {
+        println!("{} Resolved version: {}", "→".cyan(), output.npm_meta.resolved_version);
+    }
+
     let sr = &output.score_result;
 
     // CVEs
