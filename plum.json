@@ -1,0 +1,6 @@
+{
+  "threshold": 70,
+  "block_on_cve": true,
+  "auto_install_above_threshold": false,
+  "ignore": []
+}
