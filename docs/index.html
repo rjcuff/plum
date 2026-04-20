@@ -211,7 +211,7 @@
     </p>
 
     <div class="install-block" onclick="copyInstall()">
-      <code>npm install -g @rjcuff/plum</code>
+      <code>npm install -g plum-scanner</code>
       <button class="copy-btn" id="copyBtn">Copy</button>
     </div>
 
@@ -276,7 +276,7 @@
 
   <script>
     function copyInstall() {
-      const cmd = 'npm install -g @rjcuff/plum';
+      const cmd = 'npm install -g plum-scanner';
       navigator.clipboard.writeText(cmd).then(() => {
         const btn = document.getElementById('copyBtn');
         btn.textContent = 'Copied!';

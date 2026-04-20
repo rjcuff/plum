@@ -1,5 +1,5 @@
 {
-  "name": "@rjcuff/plum",
+  "name": "plum-scanner",
   "version": "0.1.0",
   "description": "npm supply chain security scanner — scan before you install",
   "license": "SEE LICENSE IN LICENSE",

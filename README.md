@@ -18,7 +18,7 @@ Scanned in 0.54s
 
 **via npm** (recommended — works everywhere Node is installed):
 ```bash
-npm install -g @rjcuff/plum
+npm install -g plum-scanner
 ```
 
 **via curl** (macOS / Linux):
