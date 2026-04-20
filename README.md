@@ -1,107 +1,133 @@
-# plum
+<p align="center">
+  <h1 align="center">🟣 plum</h1>
+  <p align="center">npm supply chain security scanner — scan before you install.</p>
+  <p align="center">
+    <a href="https://www.npmjs.com/package/plum-scanner"><img src="https://img.shields.io/npm/v/plum-scanner?color=purple&label=npm" alt="npm version"></a>
+    <a href="https://github.com/rjcuff/plum/releases"><img src="https://img.shields.io/github/v/release/rjcuff/plum?color=purple" alt="GitHub release"></a>
+    <a href="https://github.com/rjcuff/plum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Elastic%202.0-blue" alt="License"></a>
+  </p>
+</p>
 
-**npm supply chain security scanner — scan before you install.**
+---
 
 ```
-plum lodash@4.17.21
+$ plum axios
 
+plum axios
+
+→ Resolved version: 1.15.1
 ✓ No known CVEs
-✓ Established maintainer (8 years)
-✓ 47M weekly downloads
-■ Contains install script — review postinstall hook
+✓ Established maintainer (established)
+✓ 100M weekly downloads
 
-Score: 82/100 — SAFE
-Scanned in 0.54s
+Score: 100/100 — SAFE
+Scanned in 0.82s
 ```
 
-## Install
+plum scans npm packages for supply chain risks before they touch your project. It checks for known CVEs (version-aware), typosquatting, malicious code patterns, suspicious maintainer activity, and more — all in under a second.
 
-**via npm** (recommended — works everywhere Node is installed):
+No account. No API key. No workflow change. Just `plum <package>`.
+
+## Quick Start
+
 ```bash
 npm install -g plum-scanner
 ```
 
-**via curl** (macOS / Linux):
+```bash
+# Scan a package
+plum express
+
+# Scan and install if it passes
+plum install express
+
+# Auto-approve without prompting
+plum install express --yes
+```
+
+Also available via curl (macOS/Linux) or as a standalone binary from [Releases](https://github.com/rjcuff/plum/releases):
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rjcuff/plum/main/install.sh | bash
 ```
 
-Or download a binary directly from [Releases](https://github.com/rjcuff/plum/releases).
+## What It Catches
 
-## Usage
+| Signal | Impact |
+|--------|--------|
+| Known CVEs (version-aware via [OSV](https://osv.dev)) | Hard block or −30 pts |
+| Obfuscated `eval(Buffer.from(...))` | Auto block |
+| Credential harvesting (`process.env.npm_token`) | −15 pts |
+| Shell access via `child_process.exec` | −5 pts |
+| Writing to system paths (`/etc/`) | −15 pts |
+| Typosquatting (edit distance ≤ 2 from top-200 packages) | −30 pts |
+| New maintainer (account < 30 days) | −20 pts |
+| Recently published (< 7 days) | −20 pts |
+| Install scripts (postinstall/preinstall) | −15 pts |
+| Low downloads (< 100/week) | −10 pts |
+| No README | −10 pts |
 
-```bash
-# Scan a package before deciding to install
-plum <package>
+Packages score 0–100. Verdicts: **SAFE**, **RISKY**, or **DANGEROUS**.
 
-# Scan then install if it passes your threshold
-plum install <package>
+## How It Works
 
-# Auto-approve without prompting
-plum install <package> --yes
-```
+1. Resolves the latest (or pinned) version from the npm registry
+2. Queries [OSV.dev](https://osv.dev) with the exact version — only CVEs affecting that version are flagged
+3. Fetches package metadata: maintainer age, publish date, download count, install scripts
+4. Downloads the tarball and scans `.js` files in memory (never written to disk) for malicious patterns
+5. Checks for typosquatting against the top 200 npm packages
+6. Computes a weighted score and renders a verdict
 
-## What it checks
+All network requests run in parallel. Typical scan: **< 1 second**.
 
-| Signal | Score impact |
-|--------|-------------|
-| Known CVE found | Hard block (score → 0) |
-| Published < 7 days ago | −20 pts |
-| Maintainer account < 30 days old | −20 pts |
-| No README present | −10 pts |
-| Install scripts (postinstall) | −15 pts |
-| Download count < 100/week | −10 pts |
-| Name within edit-distance 2 of top-200 package | −30 pts |
-| Malicious code patterns in .js files | −5 to hard block |
+## Configuration
 
-Packages score 0–100. Score ≥ threshold = SAFE. Below = RISKY or DANGEROUS.
-
-## Data sources
-
-- **[OSV](https://osv.dev)** — Google's open vulnerability database (all npm CVEs)
-- **npm Registry** — publish date, maintainer age, download counts, install scripts
-- **GitHub Advisory** — known malicious package database
-- **Tarball static analysis** — downloads and scans `.js` files in memory, never to disk
-
-All checks run in parallel. Typical scan time: **< 1 second**.
-
-## Config
-
-Drop a `plum.json` in your project root:
+Drop a `plum.json` in your project root to customize behavior:
 
 ```json
 {
   "threshold": 70,
   "block_on_cve": true,
+  "min_cve_severity": "high",
   "auto_install_above_threshold": false,
   "ignore": ["my-internal-package"]
 }
 ```
 
-| Key | Default | Description |
-|-----|---------|-------------|
+| Option | Default | Description |
+|--------|---------|-------------|
 | `threshold` | `70` | Minimum score to pass |
-| `block_on_cve` | `true` | Hard-block on any known CVE |
-| `auto_install_above_threshold` | `false` | Install without prompting if score passes |
-| `ignore` | `[]` | Package names to skip scanning |
+| `block_on_cve` | `true` | Hard-block when CVEs meet severity threshold |
+| `min_cve_severity` | `"high"` | Minimum CVE severity to trigger a block (`critical`, `high`, `medium`, `low`) |
+| `auto_install_above_threshold` | `false` | Skip the y/n prompt if score passes |
+| `ignore` | `[]` | Package names to skip entirely |
 
-## Build from source
+## Data Sources
+
+| Source | What it provides |
+|--------|-----------------|
+| [OSV.dev](https://osv.dev) | Version-aware CVE lookups with severity ratings |
+| npm Registry | Publish dates, maintainer info, download stats, install scripts |
+| GitHub Advisory Database | Known malicious package advisories |
+| Tarball static analysis | In-memory regex scan of `.js` files for dangerous patterns |
+
+## Build From Source
 
 ```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
 git clone https://github.com/rjcuff/plum
 cd plum
 cargo build --release
+# Binary at target/release/plum
 ```
+
+Requires [Rust](https://rustup.rs/) 1.70+.
 
 ## Why plum
 
-Supply chain attacks happen *after* you run `npm install`. plum intercepts before. It takes < 1 second and requires no account, no API key, and no workflow change.
+Supply chain attacks happen after `npm install`. plum intercepts before. It's fast, offline-capable for scoring, and doesn't require you to change your workflow.
 
-Comparable tools: [Socket.dev](https://socket.dev) ($20M raised). plum is open source, CLI-first, and free.
+Comparable tools like [Socket.dev](https://socket.dev) are SaaS products. plum is open source, CLI-first, and free.
 
 ## License
 
-[Elastic License 2.0](./LICENSE) — source available, free to use personally and commercially as a CLI tool. You may not offer plum as a hosted or managed service without permission. Pull requests and bug reports welcome.
+[Elastic License 2.0](./LICENSE) — free to use as a CLI tool, personally and commercially. You may not offer plum as a hosted/managed service without permission. Contributions welcome.
