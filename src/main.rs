@@ -72,7 +72,14 @@ async fn run_scan(package: &str, config: &Config, do_install: bool, force_yes: b
         println!("{} No known CVEs", "✓".green().bold());
     } else {
         for v in &output.vulns {
-            println!("{} {} — {}", "✗".red().bold(), v.id.red(), v.summary);
+            let sev_label = match v.severity {
+                scanner::osv::VulnSeverity::Critical => "CRITICAL".red().bold().to_string(),
+                scanner::osv::VulnSeverity::High => "HIGH".red().to_string(),
+                scanner::osv::VulnSeverity::Medium => "MEDIUM".yellow().to_string(),
+                scanner::osv::VulnSeverity::Low => "LOW".dimmed().to_string(),
+                scanner::osv::VulnSeverity::Unknown => "UNKNOWN".dimmed().to_string(),
+            };
+            println!("{} {} [{}] — {}", "✗".red().bold(), v.id.red(), sev_label, v.summary);
         }
     }
 

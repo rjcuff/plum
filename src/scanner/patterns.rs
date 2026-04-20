@@ -37,8 +37,8 @@ static PATTERN_DEFS: &[(&str, &str, Severity)] = &[
         Severity::Warning,
     ),
     (
-        r"\bexec\s*\(",
-        "Shell execution (exec)",
+        r#"(?:require\s*\(\s*['"]child_process['"]\s*\)|child_process)[\s\S]{0,50}\.exec\s*\("#,
+        "Shell execution via child_process.exec",
         Severity::Warning,
     ),
     (

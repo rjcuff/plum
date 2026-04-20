@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::scanner::npm::NpmMeta;
-use crate::scanner::osv::Vulnerability;
+use crate::scanner::osv::{Vulnerability, VulnSeverity};
 use crate::scanner::patterns::{PatternMatch, Severity};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,11 +44,22 @@ pub fn compute(
     let mut signals = Vec::new();
     let mut hard_blocked = false;
 
-    if !vulns.is_empty() && config.block_on_cve {
+    let min_sev = parse_min_severity(&config.min_cve_severity);
+    let serious_vulns: Vec<&Vulnerability> = vulns
+        .iter()
+        .filter(|v| severity_rank(&v.severity) >= severity_rank(&min_sev))
+        .collect();
+
+    if !serious_vulns.is_empty() && config.block_on_cve {
         hard_blocked = true;
         score = 0;
         signals.push(Signal {
-            description: format!("{} known CVE(s) found", vulns.len()),
+            description: format!(
+                "{} CVE(s) at {} severity or above (of {} total)",
+                serious_vulns.len(),
+                config.min_cve_severity.to_uppercase(),
+                vulns.len()
+            ),
             points: -100,
         });
         return ScoreResult {
@@ -59,12 +70,27 @@ pub fn compute(
         };
     }
 
-    // Still deduct for CVEs even if not hard-blocking
-    if !vulns.is_empty() {
+    // Still deduct for serious CVEs even if not hard-blocking
+    if !serious_vulns.is_empty() {
         let pts = -30;
         score += pts;
         signals.push(Signal {
-            description: format!("{} known CVE(s) found", vulns.len()),
+            description: format!(
+                "{} CVE(s) at {} severity or above",
+                serious_vulns.len(),
+                config.min_cve_severity.to_uppercase()
+            ),
+            points: pts,
+        });
+    }
+
+    // Minor deduction for lower-severity CVEs
+    let minor_count = vulns.len() - serious_vulns.len();
+    if minor_count > 0 {
+        let pts = -5;
+        score += pts;
+        signals.push(Signal {
+            description: format!("{} lower-severity CVE(s) (below threshold)", minor_count),
             points: pts,
         });
     }
@@ -172,5 +198,25 @@ pub fn compute(
         verdict,
         signals,
         hard_blocked,
+    }
+}
+
+fn severity_rank(sev: &VulnSeverity) -> u8 {
+    match sev {
+        VulnSeverity::Critical => 4,
+        VulnSeverity::High => 3,
+        VulnSeverity::Medium => 2,
+        VulnSeverity::Low => 1,
+        VulnSeverity::Unknown => 0,
+    }
+}
+
+fn parse_min_severity(s: &str) -> VulnSeverity {
+    match s.to_lowercase().as_str() {
+        "critical" => VulnSeverity::Critical,
+        "high" => VulnSeverity::High,
+        "medium" | "moderate" => VulnSeverity::Medium,
+        "low" => VulnSeverity::Low,
+        _ => VulnSeverity::High,
     }
 }

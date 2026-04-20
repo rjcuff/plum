@@ -8,6 +8,12 @@ pub struct Config {
     pub block_on_cve: bool,
     pub auto_install_above_threshold: bool,
     pub ignore: Vec<String>,
+    #[serde(default = "default_min_severity")]
+    pub min_cve_severity: String,
+}
+
+fn default_min_severity() -> String {
+    "high".to_string()
 }
 
 impl Default for Config {
@@ -17,6 +23,7 @@ impl Default for Config {
             block_on_cve: true,
             auto_install_above_threshold: false,
             ignore: vec![],
+            min_cve_severity: "high".to_string(),
         }
     }
 }
