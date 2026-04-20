@@ -11,7 +11,7 @@
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rjcuff/plum/main/docs/demo.gif" alt="plum demo" width="600">
+  <img src="./docs/demo.gif" alt="plum demo" width="600">
 </p>
 
 ```
